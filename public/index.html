@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ArivuWatch</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#07070f;--bg2:#0d0d1a;--bdr:rgba(124,107,255,.2);--acc:#7c6bff;--txt:#e2e8f0;--txt2:#94a3b8;--green:#22c55e;--red:#ef4444;--orange:#f59e0b}
+body{background:var(--bg);color:var(--txt);font-family:"Segoe UI",system-ui,sans-serif;min-height:100vh}
+.login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.login-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:20px;padding:40px;width:100%;max-width:380px;text-align:center}
+.login-card h2{font-size:22px;color:#c4b5fd;margin-bottom:20px}
+header{background:var(--bg2);border-bottom:1px solid var(--bdr);padding:12px 24px;display:flex;align-items:center;gap:12px}
+header h1{font-size:18px;color:#c4b5fd}
+.user-bar{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:14px}
+.main{padding:20px;max-width:1400px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.section{background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;padding:20px;margin-bottom:16px}
+.section h2{font-size:15px;font-weight:600;color:#c4b5fd;margin-bottom:14px}
+.card{background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;padding:16px}
+.card h3{font-size:13px;color:var(--txt2);margin-bottom:8px}
+.status{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%}.dot-up{background:var(--green)}.dot-down{background:var(--red)}
+input,textarea,select{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:var(--txt);font-size:14px;font-family:inherit;outline:none;margin-bottom:8px}
+input:focus,textarea:focus{border-color:var(--acc)}
+button{padding:8px 16px;background:var(--acc);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+button:hover{opacity:.85}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-ghost{background:rgba(255,255,255,.08);color:var(--txt)}
+.todo-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px}
+.todo-item:last-child{border:none}
+.done{text-decoration:line-through;opacity:.45}
+.note-item{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.note-item:last-child{border:none}
+.priority-badge{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;text-transform:uppercase}
+.p-urgent{background:rgba(239,68,68,.2);color:var(--red)}
+.p-high{background:rgba(245,158,11,.2);color:var(--orange)}
+.p-normal{background:rgba(124,107,255,.15);color:var(--acc)}
+.p-low{background:rgba(148,163,184,.15);color:var(--txt2)}
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;background:var(--bg2);border:1px solid var(--bdr);border-radius:10px;font-size:13px;z-index:99;animation:slideIn .3s}
+.toast.error{border-color:var(--red);color:var(--red)}
+.toast.success{border-color:var(--green);color:var(--green)}
+@keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.uptime-bar{display:flex;gap:2px;margin-top:6px}
+.uptime-bar span{flex:1;height:16px;border-radius:2px}
+.uptime-up{background:var(--green)}
+.uptime-down{background:var(--red)}
+.uptime-none{background:rgba(255,255,255,.05)}
+@media(max-width:768px){.grid{grid-template-columns:1fr 1fr}.main{padding:12px}}
+</style></head><body>
+
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div style="font-size:48px;margin-bottom:12px">🦅</div>
+    <h2>ArivuWatch</h2>
+    <p style="color:var(--txt2);font-size:13px;margin-bottom:20px">Operations Dashboard</p>
+    <input type="text" id="login-user" placeholder="Username" autocomplete="username">
+    <input type="password" id="login-pwd" placeholder="Password" autocomplete="current-password">
+    <button id="btn-login" style="width:100%;padding:12px">Sign In</button>
+    <div id="login-error" style="color:var(--red);font-size:13px;margin-top:10px"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <header>
+    <span style="font-size:20px">🦅</span><h1>ArivuWatch</h1>
+    <div class="user-bar">
+      <span id="user-name"></span>
+      <button class="btn-sm btn-ghost" id="btn-logout">Logout</button>
+    </div>
+  </header>
+  <div class="main">
+    <div id="services" class="grid"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="section">
+        <h2>✅ Tasks</h2>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input type="text" id="todo-input" placeholder="Add task..." style="margin:0;flex:1" maxlength="500">
+          <select id="todo-priority" style="width:auto;margin:0"><option value="normal">Normal</option><option value="low">Low</option><option value="high">High</option><option value="urgent">Urgent</option></select>
+          <button class="btn-sm" id="btn-add-todo">Add</button>
+        </div>
+        <div id="todos-list"></div>
+      </div>
+
+      <div class="section">
+        <h2>📝 Notes</h2>
+        <input type="text" id="note-title" placeholder="Title..." maxlength="300">
+        <textarea id="note-content" rows="2" placeholder="Content..." maxlength="10000"></textarea>
+        <button class="btn-sm" id="btn-add-note">Save Note</button>
+        <div id="notes-list" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🤖 Ask Arivu AI</h2>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="ask-input" placeholder="Ask anything..." style="margin:0;flex:1" maxlength="2000">
+        <button id="btn-ask">Ask</button>
+      </div>
+      <div id="ask-result" style="margin-top:12px;font-size:14px;color:var(--txt2);line-height:1.6"></div>
+    </div>
+
+    <div class="section">
+      <h2>📊 Uptime History (last 20 checks per service)</h2>
+      <div id="uptime-bars"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let token = localStorage.getItem("aw_token");
+let currentUser = null;
+
+function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+function toast(msg, type = "info") { const t = document.createElement("div"); t.className = `toast ${type}`; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 3500); }
+
+async function api(path, opts = {}) {
+  const headers = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(`/api${path}`, { ...headers, ...opts, headers });
+  const data = await res.json();
+  if (!res.ok) { if (res.status === 401 && path !== "/auth/login") { logout(); return null; } throw new Error(data.error || "Request failed"); }
+  return data;
+}
+
+async function login() {
+  const u = document.getElementById("login-user").value.trim();
+  const p = document.getElementById("login-pwd").value;
+  if (!u || !p) { document.getElementById("login-error").textContent = "Enter username and password"; return; }
+  try {
+    const data = await api("/auth/login", { method: "POST", body: JSON.stringify({ username: u, password: p }) });
+    token = data.token; currentUser = data.user;
+    localStorage.setItem("aw_token", token);
+    showApp();
+  } catch (e) { document.getElementById("login-error").textContent = e.message; }
+}
+
+function logout() {
+  token = null; currentUser = null; localStorage.removeItem("aw_token");
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("app").style.display = "none";
+}
+
+async function tryAutoLogin() {
+  if (!token) return;
+  try { const data = await api("/auth/me"); currentUser = data.user; showApp(); } catch { logout(); }
+}
+
+function showApp() {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  document.getElementById("user-name").textContent = currentUser.display_name;
+  loadAll();
+}
+
+function loadAll() { loadStatus(); loadTodos(); loadNotes(); loadHistory(); }
+
+async function loadStatus() {
+  try {
+    const data = await api("/status");
+    if (!data) return;
+    document.getElementById("services").innerHTML = data.services.map(s => `
+      <div class="card">
+        <h3>${esc(s.name)}</h3>
+        <div class="status"><div class="dot dot-${s.status}"></div><span>${s.status.toUpperCase()}</span>
+          ${s.latency ? `<span style="color:var(--txt2);font-size:12px;margin-left:auto">${s.latency}ms</span>` : ""}
+        </div>
+        <div style="font-size:12px;color:#475569;margin-top:4px">:${s.port}</div>
+      </div>
+    `).join("");
+  } catch (e) { console.error("Status:", e); }
+}
+
+async function loadTodos() {
+  try {
+    const data = await api("/todos"); if (!data) return;
+    document.getElementById("todos-list").innerHTML = data.todos.length === 0
+      ? '<div style="font-size:13px;color:var(--txt2)">No tasks</div>'
+      : data.todos.map(t => `
+        <div class="todo-item">
+          <input type="checkbox" ${t.done ? "checked" : ""} onchange="toggleTodo(${t.id})">
+          <span class="${t.done ? 'done' : ''}">${esc(t.title)}</span>
+          <span class="priority-badge p-${t.priority}" style="margin-left:auto">${t.priority}</span>
+          <button class="btn-sm btn-ghost" onclick="deleteTodo(${t.id})">✕</button>
+        </div>`).join("");
+  } catch (e) { console.error("Todos:", e); }
+}
+
+async function addTodo() {
+  const i = document.getElementById("todo-input"); const t = i.value.trim(); if (!t) return;
+  try { await api("/todos", { method: "POST", body: JSON.stringify({ title: t, priority: document.getElementById("todo-priority").value }) }); i.value = ""; loadTodos(); } catch (e) { toast(e.message, "error"); }
+}
+async function toggleTodo(id) { try { await api(`/todos/${id}/toggle`, { method: "PUT", body: "{}" }); loadTodos(); } catch (e) { toast(e.message, "error"); } }
+async function deleteTodo(id) { try { await api(`/todos/${id}`, { method: "DELETE" }); loadTodos(); } catch (e) { toast(e.message, "error"); } }
+
+async function loadNotes() {
+  try {
+    const data = await api("/notes"); if (!data) return;
+    document.getElementById("notes-list").innerHTML = data.notes.length === 0
+      ? '<div style="font-size:13px;color:var(--txt2)">No notes</div>'
+      : data.notes.slice(0, 10).map(n => `
+        <div class="note-item">
+          <div style="display:flex;align-items:center;gap:6px">
+            ${n.pinned ? '<span style="font-size:12px">📌</span>' : ""}
+            <span style="font-weight:600;font-size:14px">${esc(n.title)}</span>
+            <button class="btn-sm btn-ghost" onclick="deleteNote(${n.id})" style="margin-left:auto;font-size:11px">✕</button>
+          </div>
+          <div style="font-size:13px;color:var(--txt2);margin-top:2px">${esc((n.content || "").slice(0, 100))}</div>
+        </div>`).join("");
+  } catch (e) { console.error("Notes:", e); }
+}
+
+async function addNote() {
+  const t = document.getElementById("note-title").value.trim();
+  const c = document.getElementById("note-content").value.trim();
+  if (!t) return;
+  try { await api("/notes", { method: "POST", body: JSON.stringify({ title: t, content: c }) }); document.getElementById("note-title").value = ""; document.getElementById("note-content").value = ""; loadNotes(); toast("Note saved", "success"); } catch (e) { toast(e.message, "error"); }
+}
+async function deleteNote(id) { try { await api(`/notes/${id}`, { method: "DELETE" }); loadNotes(); } catch (e) { toast(e.message, "error"); } }
+
+async function askArivu() {
+  const q = document.getElementById("ask-input").value.trim(); if (!q) return;
+  document.getElementById("ask-result").textContent = "Thinking...";
+  try {
+    const data = await api("/ask", { method: "POST", body: JSON.stringify({ question: q }) });
+    document.getElementById("ask-result").textContent = data?.answer || "No response";
+  } catch (e) { document.getElementById("ask-result").textContent = e.message; }
+}
+
+async function loadHistory() {
+  try {
+    const data = await api("/status/history"); if (!data) return;
+    const grouped = {};
+    data.history.forEach(h => {
+      if (!grouped[h.service_name]) grouped[h.service_name] = [];
+      grouped[h.service_name].push(h);
+    });
+    const el = document.getElementById("uptime-bars");
+    el.innerHTML = Object.entries(grouped).map(([name, checks]) => {
+      const last20 = checks.slice(0, 20).reverse();
+      const upCount = last20.filter(c => c.status === "up").length;
+      const pct = last20.length > 0 ? Math.round((upCount / last20.length) * 100) : 0;
+      return `<div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <span>${esc(name)}</span><span style="color:${pct >= 90 ? 'var(--green)' : pct >= 50 ? 'var(--orange)' : 'var(--red)'}">${pct}% uptime</span>
+        </div>
+        <div class="uptime-bar">${last20.map(c => `<span class="uptime-${c.status}" title="${c.checked_at}: ${c.status}${c.latency ? ' ('+c.latency+'ms)' : ''}"></span>`).join("")}${Array(20 - last20.length).fill('<span class="uptime-none"></span>').join("")}</div>
+      </div>`;
+    }).join("");
+  } catch (e) { console.error("History:", e); }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("btn-login").addEventListener("click", login);
+  document.getElementById("login-pwd").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
+  document.getElementById("btn-logout").addEventListener("click", logout);
+  document.getElementById("btn-add-todo").addEventListener("click", addTodo);
+  document.getElementById("todo-input").addEventListener("keydown", e => { if (e.key === "Enter") addTodo(); });
+  document.getElementById("btn-add-note").addEventListener("click", addNote);
+  document.getElementById("btn-ask").addEventListener("click", askArivu);
+  document.getElementById("ask-input").addEventListener("keydown", e => { if (e.key === "Enter") askArivu(); });
+  setInterval(loadStatus, 30000);
+  tryAutoLogin();
+});
+</script></body></html>
